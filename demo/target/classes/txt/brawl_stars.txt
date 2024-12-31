@@ -1,0 +1,14 @@
+brawlers 4
+trophies 3
+supercell 4
+starpower 4
+seasonpass 4
+gamemodes 3
+亂鬥通行券 3
+戰隊 3 
+聯名 2
+能力之星 2
+gemgrab 2
+showdown 2
+skins 1
+bigbox 1

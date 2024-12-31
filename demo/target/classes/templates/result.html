@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <link rel="icon" href="/coogle.png" type="image/x-icon">
+    <link rel="shortcut icon" href="/coogle.png" type="image/x-icon">
+    <meta charset="UTF-8">
+    <title>搜尋結果</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #0f0f0f;
+            color: #ffffff;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            border-radius: 16px;
+            background-color: rgba(31, 31, 31, 0.95);
+            box-shadow: 0 8px 16px rgba(255, 0, 0, 0.6);
+            width: 900px;
+            margin-top: 20px;
+        }
+
+        h1 {
+            font-size: 50px;
+            font-family: "Roboto", "Open Sans", sans-serif;
+            font-weight: bold;
+            color: #ff1a1a;
+            background: linear-gradient(to right, #ff3333, #cc0000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            margin: 10px 0;
+            font-size: 1em;
+        }
+
+        a {
+            font-size: 20px;
+            font-family: "Arial", "Helvetica", sans-serif;
+            text-decoration: none;
+            color: #f06161;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+            color: #ff1a1a;
+        }
+
+        form {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        select,
+        input[type="text"],
+        button {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            outline: none;
+        }
+
+        select {
+            flex: 1.5;
+            background-color: #374151;
+            color: white;
+            border: 1px solid #f43f5e;
+        }
+
+        input[type="text"] {
+            flex: 4;
+            background-color: #374151;
+            color: white;
+            border: 1px solid #f43f5e;
+        }
+
+        button {
+            flex: 1;
+            background-color: #e11d48;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #be123c;
+        }
+
+        .preview-image {
+            width: 20%;
+            height: 20%;
+            object-fit: contain;
+        }
+
+        /* 推薦框樣式 */
+        #suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: #1f2937;
+            border: 1px solid #f43f5e;
+            border-radius: 8px;
+            display: none;
+            z-index: 1000;
+        }
+
+        #suggestions ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #suggestions li {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        #suggestions li:hover {
+            background-color: #374151;
+            color: #f43f5e;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const categorySelect = document.getElementById('category');
+            const previewImage = document.getElementById('preview-image');
+            const queryInput = document.getElementById('query');
+            const form = document.getElementById('search-form');
+
+            // 動態推薦框
+            const suggestionsBox = document.createElement('div');
+            const suggestionsList = document.createElement('ul');
+
+            suggestionsBox.id = 'suggestions';
+            suggestionsBox.appendChild(suggestionsList);
+            queryInput.parentNode.appendChild(suggestionsBox);
+
+            queryInput.addEventListener('input', () => {
+                const keyword = queryInput.value.trim();
+
+                if (keyword.length > 0) {
+                    fetch(`/suggestions?keyword=${encodeURIComponent(keyword)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            suggestionsList.innerHTML = ''; // 清空舊的推薦內容
+                            if (data.suggestions && data.suggestions.length > 0) {
+                                data.suggestions.forEach(suggestion => {
+                                    const li = document.createElement('li');
+                                    li.textContent = suggestion;
+                                    li.addEventListener('click', () => {
+                                        queryInput.value = suggestion;
+                                        form.submit(); // 點擊後直接提交表單
+                                    });
+                                    suggestionsList.appendChild(li);
+                                });
+                                suggestionsBox.style.display = 'block';
+                            } else {
+                                suggestionsBox.style.display = 'none';
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error fetching suggestions:', err);
+                        });
+                } else {
+                    suggestionsBox.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#suggestions') && e.target !== queryInput) {
+                    suggestionsBox.style.display = 'none';
+                }
+            });
+
+            // 圖片更新
+            const initialCategory = new URLSearchParams(window.location.search).get('category');
+            if (initialCategory) {
+                categorySelect.value = initialCategory;
+                updatePreviewImage(initialCategory);
+            }
+
+            categorySelect.addEventListener('change', () => {
+                const selectedValue = categorySelect.value;
+                updatePreviewImage(selectedValue);
+            });
+
+            function updatePreviewImage(category) {
+                if (category) {
+                    switch (category) {
+                        case 'brawl_stars':
+                            previewImage.src = '/brawlstar.png';
+                            break;
+                        case 'arena_of_valor':
+                            previewImage.src = '/aov.png';
+                            break;
+                        case 'league_of_legends':
+                            previewImage.src = '/lol.png';
+                            break;
+                        case 'valorant':
+                            previewImage.src = '/valorant.png';
+                            break;
+                        default:
+                            previewImage.src = '';
+                            break;
+                    }
+                    previewImage.style.display = 'block';
+                } else {
+                    previewImage.style.display = 'none';
+                }
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1 th:text="${keyword}">搜尋結果</h1>
+        <img id="preview-image" class="preview-image" src="" alt="Game Preview" style="display: none;">
+        <form id="search-form" action="/google" method="get">
+            <select id="category" name="category">
+                <option value="">--請選擇--</option>
+                <option value="brawl_stars">荒野亂鬥</option>
+                <option value="arena_of_valor">傳說對決</option>
+                <option value="league_of_legends">英雄聯盟</option>
+                <option value="valorant">特戰英豪</option>
+            </select>
+            <input type="text" id="query" name="keyword" th:placeholder="${keyword}" required>
+            <button type="submit">搜尋</button>
+        </form>
+        <ul>
+            <li th:each="entry : ${google}">
+                <a th:href="${entry.value}" th:text="${entry.key}" target="_blank"></a>
+            </li>
+        </ul>
+    </div>
+</body>
+
+</html>

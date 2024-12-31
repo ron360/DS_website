@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <link rel="icon" href="/coogle.png" type="image/x-icon">
+    <link rel="shortcut icon" href="/coogle.png" type="image/x-icon">
+    <meta charset="UTF-8">
+    <title>Coogle</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #000;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            border-radius: 16px;
+            background-color: #1f2937;
+            box-shadow: 0 8px 16px rgba(255, 0, 0, 0.2);
+            color: white;
+            width: 900px;
+        }
+
+        h1 {
+            font-size: 50px;
+            font-family: "Roboto", "Open Sans", sans-serif;
+            font-weight: bold;
+            color: #f43f5e;
+            background: linear-gradient(to right, #f43f5e, #e11d48);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+
+        .highlight {
+            color: #f5c7b8;
+            -webkit-text-fill-color: #f5c7b8;
+        }
+
+        form {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        select,
+        input[type="text"],
+        button {
+            width: 100%;
+            max-width: 300px;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            outline: none;
+        }
+
+        select {
+            width: 150px;
+            background-color: #374151;
+            color: white;
+            border: 1px solid #f43f5e;
+        }
+
+        input[type="text"] {
+            background-color: #374151;
+            color: white;
+            border: 1px solid #f43f5e;
+        }
+
+        button {
+            background-color: #e11d48;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #be123c;
+        }
+
+        .game-preview {
+            margin-top: 20px;
+        }
+
+        .game-preview img {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+        }
+
+        #suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: #1f2937;
+            border: 1px solid #f43f5e;
+            border-radius: 8px;
+            display: none;
+            z-index: 1000;
+        }
+
+        #suggestions ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        #suggestions li {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        #suggestions li:hover {
+            background-color: #374151;
+            color: #f43f5e;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const queryInput = document.getElementById('query');
+            const form = document.getElementById('search-form');
+            const suggestionsBox = document.createElement('div');
+            const suggestionsList = document.createElement('ul');
+
+            suggestionsBox.id = 'suggestions';
+            suggestionsBox.appendChild(suggestionsList);
+            queryInput.parentNode.appendChild(suggestionsBox);
+
+            queryInput.addEventListener('input', () => {
+                const keyword = queryInput.value.trim();
+
+                if (keyword.length > 0) {
+                    fetch(`/suggestions?keyword=${encodeURIComponent(keyword)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            suggestionsList.innerHTML = ''; // 清空舊的推薦內容
+                            if (data.suggestions && data.suggestions.length > 0) {
+                                data.suggestions.forEach(suggestion => {
+                                    const li = document.createElement('li');
+                                    li.textContent = suggestion;
+                                    li.addEventListener('click', () => {
+                                        queryInput.value = suggestion;
+                                        form.submit(); // 點擊後直接提交表單
+                                    });
+                                    suggestionsList.appendChild(li);
+                                });
+                                suggestionsBox.style.display = 'block';
+                            } else {
+                                suggestionsBox.style.display = 'none';
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Error fetching suggestions:', err);
+                        });
+                } else {
+                    suggestionsBox.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#suggestions') && e.target !== queryInput) {
+                    suggestionsBox.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>
+            c<span class="highlight">ΘΘ</span>gle
+        </h1>
+        <form id="search-form" action="/google" method="get">
+            <select id="category" name="category">
+                <option value="">--請選擇--</option>
+                <option value="brawl_stars">荒野亂鬥</option>
+                <option value="arena_of_valor">傳說對決</option>
+                <option value="league_of_legends">英雄聯盟</option>
+                <option value="valorant">特戰英豪</option>
+            </select>
+            <input type="text" id="query" name="keyword" placeholder="輸入搜尋關鍵字..." required>
+            <button type="submit">搜尋</button>
+        </form>
+
+        <div id="preview-container" class="game-preview" style="display: none;">
+            <img id="preview-image" src="" alt="Game Preview">
+        </div>
+    </div>
+</body>
+
+</html>
